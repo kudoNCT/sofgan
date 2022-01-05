@@ -14,7 +14,7 @@ def getListOfFiles(dirName):
     for root, dirs, files in os.walk(dirName):
         for file in files:
             # append the file name to the list
-            filelist.append(os.path.join(root, file))
+            filelist.append(file)
 
     return filelist
 
