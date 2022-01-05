@@ -196,6 +196,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                     writer.add_scalar('Loss/shift_loss', shift_loss_val, i)
 
             steps = get_world_size() * args.batch * (1 + i)
+            '''
             if steps % 100000 < get_world_size() * args.batch or (steps<1000 and steps%500==get_world_size() * args.batch):
                 with torch.no_grad():
                     g_ema.eval()
@@ -251,7 +252,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                             range=(-1, 1),
                         )
 
-
+            '''
             if (steps+get_world_size()*args.batch) % 1000 < get_world_size()*args.batch and steps != args.start_iter:
                 torch.save(
                     {
