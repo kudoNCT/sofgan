@@ -43,12 +43,9 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
     mean_path_length_avg, seg_loss_val, shift_loss_val = 0, 0, 0
     loss_dict = {}
 
-    if args.distributed:
-        g_module = generator.module
-        d_module = discriminator.module
-    else:
-        g_module = generator
-        d_module = discriminator
+
+    g_module = generator
+    d_module = discriminator
 
     accum = 0.5 ** (32 / (10 * 1000))
 
@@ -298,17 +295,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    n_gpu = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
-    args.distributed = n_gpu > 1
-
-    if args.distributed:
-        torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(backend='nccl', init_method='env://')
-        synchronize()
 
     args.latent = 512
     args.n_mlp = 8
-
+    args.distributed = False
     args.start_iter = 0
 
     generator = Generator(args).to(device)
@@ -359,21 +349,6 @@ if __name__ == '__main__':
         import lpips
         percept = lpips.PerceptualLoss(model='net-lin', net='vgg')
 
-    if args.distributed:
-        generator = nn.parallel.DistributedDataParallel(
-            generator,
-            device_ids=[args.local_rank],
-            output_device=args.local_rank,
-            broadcast_buffers=False,
-            # find_unused_parameters=True,
-        )
-
-        discriminator = nn.parallel.DistributedDataParallel(
-            discriminator,
-            device_ids=[args.local_rank],
-            output_device=args.local_rank,
-            broadcast_buffers=False,
-        )
 
 
     transform = transforms.Compose(
@@ -388,7 +363,7 @@ if __name__ == '__main__':
     loader = data.DataLoader(
         dataset,
         batch_size=args.batch,
-        sampler=data_sampler(dataset, shuffle=True, distributed=args.distributed),
+        sampler=data_sampler(dataset, shuffle=True, distributed=False),
         drop_last=True,
         num_workers = args.num_workers,
     )
