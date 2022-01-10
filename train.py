@@ -182,15 +182,15 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                     f'mean path: {mean_path_length_avg:.4f}'
                 )
             )
-
+            if i%100 == 0:
+                print(f"Epoch: {i} | g_loss : {g_loss_val} | d_loss: {d_loss_val}")
             if args.with_tensorboard:
                 writer.add_scalar('Loss/Generator', g_loss_val, i)
                 writer.add_scalar('Loss/Discriminator', d_loss_val, i)
                 writer.add_scalar('Loss/R1', r1_val, i)
                 writer.add_scalar('Loss/Path Length', path_length_val, i)
                 writer.add_scalar('Loss/mean path', mean_path_length_avg, i)
-            if i%100 == 0:
-                print(f"Epoch: {i} | g_loss : {g_loss_val} | d_loss: {d_loss_val}")
+
 
                 if args.condition_path is not None:
                     writer.add_scalar('Loss/seg_img', seg_loss_val, i)
