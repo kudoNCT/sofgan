@@ -31,8 +31,8 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
     start_iter = args.start_iter // get_world_size() // args.batch
     pbar = range(args.iter // get_world_size() // args.batch)
 
-    #if get_rank() == 0:
-    #    pbar = tqdm(pbar, initial=start_iter, dynamic_ncols=True, smoothing=0.01)
+    if get_rank() == 0:
+        pbar = tqdm(pbar, initial=start_iter, dynamic_ncols=True, smoothing=0.01)
 
     mean_path_length = 0
 
@@ -43,14 +43,17 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
     mean_path_length_avg, seg_loss_val, shift_loss_val = 0, 0, 0
     loss_dict = {}
 
-
-    g_module = generator
-    d_module = discriminator
+    if args.distributed:
+        g_module = generator.module
+        d_module = discriminator.module
+    else:
+        g_module = generator
+        d_module = discriminator
 
     accum = 0.5 ** (32 / (10 * 1000))
 
 
-    #sample_condition_img, sample_conditions, condition_img_color = random_condition_img(args.n_sample)
+    sample_condition_img, sample_conditions, condition_img_color = random_condition_img(args.n_sample)
 
     if get_rank() == 0:
         os.makedirs(f'sample', exist_ok=True)
@@ -174,11 +177,12 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
             shift_loss_val = loss_reduced['shift_loss'].mean().item()
 
         if get_rank() == 0:
-            #pbar.set_description(
-            #    (
-            #        f'mean path: {mean_path_length_avg:.4f}'
-            #    )
-            #)
+            pbar.set_description(
+                (
+                    f'mean path: {mean_path_length_avg:.4f}'
+                )
+            )
+
             if args.with_tensorboard:
                 writer.add_scalar('Loss/Generator', g_loss_val, i)
                 writer.add_scalar('Loss/Discriminator', d_loss_val, i)
@@ -190,66 +194,9 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                 if args.condition_path is not None:
                     writer.add_scalar('Loss/seg_img', seg_loss_val, i)
                     writer.add_scalar('Loss/shift_loss', shift_loss_val, i)
-            if i%50==0:
-                print(f"Iter: {i}")
+
             steps = get_world_size() * args.batch * (1 + i)
-            '''
-            if steps % 100000 < get_world_size() * args.batch or (steps<1000 and steps%500==get_world_size() * args.batch):
-                with torch.no_grad():
-                    g_ema.eval()
-                    samples,featuresMaps,parsing_features = [],[],[]
-                    small_batch = args.n_sample // args.batch
-                    if 0 != args.n_sample % args.batch:
-                        small_batch += 1
 
-                    # only condition change
-                    rows = int(args.n_sample ** 0.5)
-                    if args.condition_path is not None:
-                        sample_z = mixing_noise(rows, args.latent, args.mixing, device)
-                        sample_z = sample_z.unsqueeze(1).repeat(1,rows,1,1).view(args.n_sample,sample_z.shape[1],sample_z.shape[2])
-                    else:
-                        sample_z = mixing_noise(args.n_sample, args.latent, args.mixing, device)
-
-
-                    for k in range(small_batch):
-
-                        start,end = k* args.batch,(k+1)* args.batch
-                        if k == small_batch-1:
-                            end = sample_z.shape[0]
-
-                        if args.condition_path is not None:
-                            sample_condition_img_sub = sample_condition_img[start:end]
-                            sample_condition_img_sub = random_affine(sample_condition_img_sub.clone(), Scale=0.0).to(device)
-                        else:
-                            sample_condition_img_sub = None
-
-                        sample, _, _, _ = g_ema(sample_z[start:end], condition_img=sample_condition_img_sub)
-                        samples.append(sample.cpu().detach())
-
-                    samples = torch.cat(samples,dim=0)
-
-                    nrow = int(args.n_sample ** 0.5)
-                    c,h,w = samples.shape[-3:]
-                    samples = samples.reshape(nrow,nrow,c,h,w).transpose(1,0).reshape(-1,c,h,w)
-                    utils.save_image(
-                        samples,
-                        f'sample/{args.name}/{str(steps).zfill(6)}.png',
-                        nrow=int(args.n_sample ** 0.5),
-                        normalize=True,
-                        range=(-1, 1),
-                    )
-                    if 0 ==i:
-                        c, h, w = condition_img_color.shape[-3:]
-                        condition_img_color = condition_img_color.reshape(nrow, nrow, c, h, w).transpose(1, 0).reshape(-1, c, h, w)
-                        utils.save_image(
-                            condition_img_color,
-                            f'sample/{args.name}/seg_vis.png',
-                            nrow=nrow,
-                            normalize=True,
-                            range=(-1, 1),
-                        )
-
-            '''
 
             if (steps+get_world_size()*args.batch) % 10000 < get_world_size()*args.batch and steps != args.start_iter:
                 torch.save(
@@ -295,10 +242,17 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    n_gpu = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
+    args.distributed = n_gpu > 1
+
+    if args.distributed:
+        torch.cuda.set_device(args.local_rank)
+        torch.distributed.init_process_group(backend='nccl', init_method='env://')
+        synchronize()
 
     args.latent = 512
     args.n_mlp = 8
-    args.distributed = False
+
     args.start_iter = 0
 
     generator = Generator(args).to(device)
@@ -349,6 +303,21 @@ if __name__ == '__main__':
         import lpips
         percept = lpips.PerceptualLoss(model='net-lin', net='vgg')
 
+    if args.distributed:
+        generator = nn.parallel.DistributedDataParallel(
+            generator,
+            device_ids=[args.local_rank],
+            output_device=args.local_rank,
+            broadcast_buffers=False,
+            # find_unused_parameters=True,
+        )
+
+        discriminator = nn.parallel.DistributedDataParallel(
+            discriminator,
+            device_ids=[args.local_rank],
+            output_device=args.local_rank,
+            broadcast_buffers=False,
+        )
 
 
     transform = transforms.Compose(
@@ -363,7 +332,7 @@ if __name__ == '__main__':
     loader = data.DataLoader(
         dataset,
         batch_size=args.batch,
-        sampler=data_sampler(dataset, shuffle=True, distributed=False),
+        sampler=data_sampler(dataset, shuffle=True, distributed=args.distributed),
         drop_last=True,
         num_workers = args.num_workers,
     )
