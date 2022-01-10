@@ -254,7 +254,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
 
             '''
 
-            if (steps+get_world_size()*args.batch) % 10000 < get_world_size()*args.batch and steps != args.start_iter:
+            if (steps+get_world_size()*args.batch) % 100 < get_world_size()*args.batch and steps != args.start_iter:
                 torch.save(
                     {
                         'g': g_module.state_dict(),
