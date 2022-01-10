@@ -53,7 +53,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
     accum = 0.5 ** (32 / (10 * 1000))
 
 
-    sample_condition_img, sample_conditions, condition_img_color = random_condition_img(args.n_sample)
+    #sample_condition_img, sample_conditions, condition_img_color = random_condition_img(args.n_sample)
 
     if get_rank() == 0:
         os.makedirs(f'sample', exist_ok=True)
