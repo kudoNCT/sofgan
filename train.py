@@ -193,7 +193,8 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                 if args.condition_path is not None:
                     writer.add_scalar('Loss/seg_img', seg_loss_val, i)
                     writer.add_scalar('Loss/shift_loss', shift_loss_val, i)
-
+            if i%50:
+                print(f"Epoch: {i}")
             steps = get_world_size() * args.batch * (1 + i)
             '''
             if steps % 100000 < get_world_size() * args.batch or (steps<1000 and steps%500==get_world_size() * args.batch):
