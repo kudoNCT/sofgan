@@ -31,8 +31,8 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
     start_iter = args.start_iter // get_world_size() // args.batch
     pbar = range(args.iter // get_world_size() // args.batch)
 
-    if get_rank() == 0:
-        pbar = tqdm(pbar, initial=start_iter, dynamic_ncols=True, smoothing=0.01)
+    #if get_rank() == 0:
+    #    pbar = tqdm(pbar, initial=start_iter, dynamic_ncols=True, smoothing=0.01)
 
     mean_path_length = 0
 
