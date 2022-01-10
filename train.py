@@ -189,7 +189,8 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                 writer.add_scalar('Loss/R1', r1_val, i)
                 writer.add_scalar('Loss/Path Length', path_length_val, i)
                 writer.add_scalar('Loss/mean path', mean_path_length_avg, i)
-
+            if i%100 == 0:
+                print(f"Epoch: {i} | g_loss : {g_loss_val} | d_loss: {d_loss_val}")
 
                 if args.condition_path is not None:
                     writer.add_scalar('Loss/seg_img', seg_loss_val, i)
@@ -254,7 +255,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
 
             '''
 
-            if (steps+get_world_size()*args.batch) % 100 < get_world_size()*args.batch and steps != args.start_iter:
+            if (steps+get_world_size()*args.batch) % 10000 < get_world_size()*args.batch and steps != args.start_iter:
                 torch.save(
                     {
                         'g': g_module.state_dict(),
