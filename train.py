@@ -177,11 +177,11 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
             shift_loss_val = loss_reduced['shift_loss'].mean().item()
 
         if get_rank() == 0:
-            pbar.set_description(
-                (
-                    f'mean path: {mean_path_length_avg:.4f}'
-                )
-            )
+            #pbar.set_description(
+            #    (
+            #        f'mean path: {mean_path_length_avg:.4f}'
+            #    )
+            #)
             if args.with_tensorboard:
                 writer.add_scalar('Loss/Generator', g_loss_val, i)
                 writer.add_scalar('Loss/Discriminator', d_loss_val, i)
