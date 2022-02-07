@@ -18,20 +18,20 @@ def getListOfFiles(dirName):
 
     return filelist
 
-remap_raw_to_new_list = torch.tensor([0,1,2,3,4,5,14,11,12,13,6,7,8,9,10,15,16,17,18,19]).float()
+remap_raw_to_new_list = torch.tensor([0,1]).float()
 def id_raw_to_new(seg):
     #raw ['background'0, 'skin'1, 'l_brow'2, 'r_brow'3, 'l_eye'4, 'r_eye'5, 'eye_g'6, 'l_ear'7, 'r_ear'8, 'ear_r'9,
     #'r_nose'10 'l_nose'11,'mouth'12, 'u_lip'13, 'l_lip'14, 'neck'15, 'neck_l'16, 'cloth'17, 'hair'18, 'hat'19]
     return remap_raw_to_new_list[seg.long()]
 
-remap_list = torch.tensor([0,1,2,2,3,3,4,5,6,7,8,9,9,10,11,12,13,14,15,16]).float()
+remap_list = torch.tensor([0,1]).float()
 def id_remap(seg):
     #['background'0,'skin'1, 'l_brow'2, 'r_brow'3, 'l_eye'4, 'r_eye'5,'r_nose'6, 'l_nose'7, 'mouth'8, 'u_lip'9,
     # 'l_lip'10, 'l_ear'11, 'r_ear'12, 'ear_r'13, 'eye_g'14, 'neck'15, 'neck_l'16, 'cloth'17, 'hair'18, 'hat'19]
 
     return remap_list[seg.long()]
 
-remap_list2 = torch.tensor([0, 1,2,3,5,4,6,7,8,9,10,11,12,13,14,15,16]).float()
+remap_list2 = torch.tensor([0,1]).float()
 def flip_labels(seg):
         return remap_list2[seg.long()]
 

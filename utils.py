@@ -8,7 +8,7 @@ import torch.distributed as dist
 from torchvision import transforms
 from torch.nn import functional as F
 
-remap_list_np = np.array([0,1,2,2,3,3,4,5,6,7,8,9,9,10,11,12,13,14,15,16]).astype('float')
+remap_list_np = np.array([0,1]).astype('float')
 def id_remap_np(seg):
     return remap_list_np[seg.astype('int')]
 
@@ -81,16 +81,8 @@ def mixing_noise(batch, latent_dim, prob, device):
 
 
 def vis_condition_img_np(img):
-    part_colors = [[0, 0, 0], [127, 212, 255], [255, 255, 127], [255, 255, 170],#'skin',1 'eye_brow'2,  'eye'3
-                    [240, 157, 240], [255, 212, 255], #'r_nose'4, 'l_nose'5
-                    [31, 162, 230], [127, 255, 255], [127, 255, 255],#'mouth'6, 'u_lip'7,'l_lip'8
-                    [0, 255, 85], [0, 255, 170], #'ear'9 'ear_r'10
-                    [255, 255, 170],
-                    [127, 170, 255], [85, 0, 255], [255, 170, 127], #'neck'11, 'neck_l'12, 'cloth'13
-                    [212, 127, 255], [0, 170, 255],#, 'hair'14, 'hat'15
-                    [255, 255, 0], [255, 255, 85], [255, 255, 170],
-                    [255, 0, 255], [255, 85, 255], [255, 170, 255],
-                    [0, 255, 255], [85, 255, 255], [170, 255, 255], [100, 150, 200]]
+    part_colors = [[0, 0, 0],
+                    [212, 127, 255]]
     N,C,H,W = img.shape
     condition_img_color = np.zeros((N,3,H,W))
 
@@ -102,16 +94,8 @@ def vis_condition_img_np(img):
     return condition_img_color
 
 def vis_condition_img(img):
-    part_colors = torch.tensor([[0, 0, 0], [127, 212, 255], [255, 255, 127], [255, 255, 170],#'skin',1 'eye_brow'2,  'eye'3
-                    [240, 157, 240], [255, 212, 255], #'r_nose'4, 'l_nose'5
-                    [31, 162, 230], [127, 255, 255], [127, 255, 255],#'mouth'6, 'u_lip'7,'l_lip'8
-                    [0, 255, 85], [0, 255, 170], #'ear'9 'ear_r'10
-                    [255, 255, 170],
-                    [127, 170, 255], [85, 0, 255], [255, 170, 127], #'neck'11, 'neck_l'12, 'cloth'13
-                    [212, 127, 255], [0, 170, 255],#, 'hair'14, 'hat'15
-                    [255, 255, 0], [255, 255, 85], [255, 255, 170],
-                    [255, 0, 255], [255, 85, 255], [255, 170, 255],
-                    [0, 255, 255], [85, 255, 255], [170, 255, 255], [100, 150, 200]]).float()
+    part_colors = torch.tensor([[0, 0, 0],
+                    [212, 127, 255]]).float()
 
     N,C,H,W = img.size()
     condition_img_color = torch.zeros((N,3,H,W))
@@ -148,8 +132,8 @@ def gaussion(x, sigma=1, mu=0):
 
 # ['background'0,'skin'1, 'eye_brow'2, 'eye'3,'r_nose'4, 'l_nose'5, 'mouth'6, 'u_lip'7,
 # 'l_lip'8, 'ear'9, 'ear_r'10, 'eye_g'11, 'neck'12, 'neck_l'13, 'cloth'14, 'hair'15, 'hat'16]
-IDList = [np.arange(17).tolist(), [0], [1, 4, 5, 9, 12], [15], [6, 7, 8, 3], [11, 13, 14, 16, 10]]
-groupName = ['Global', 'Background', 'Complexion', 'Hair', 'Eyes & Mouth', 'Wearings']
+IDList = [[0],[1]]
+groupName = ['Background', 'Hair']
 
 
 def scatter_to_mask(segementation, out_num=1, add_whole=True, add_flip=False, region=None):
@@ -228,7 +212,7 @@ def cal_av(generator, batch_size, latent_dim):
     return av
 
 
-def scatter(codition_img, source=None, classSeg=20):
+def scatter(codition_img, source=None, classSeg=2):
     batch, c, height, width = codition_img.size()
     input_label = torch.cuda.BoolTensor(batch, classSeg, height, width).zero_()
 
@@ -257,12 +241,12 @@ def mIOU(source, target):
 #     segmaps = torch.cat(segmaps).cuda()
 #     return segmaps
 
-remap_list = torch.tensor([0, 1, 2, 2, 3, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 16]).float()
+remap_list = torch.tensor([0, 1]).float()
 def id_remap(seg):
     return remap_list[seg.long()].to(seg.device)
 
 
-segClass,final_channel = 17,3
+segClass,final_channel = 2,3
 with_classwise_noise = False
 def scatter(codition_img,source=None, label_size=(128,128)):
     batch, c, height, width = codition_img.size()
@@ -279,8 +263,8 @@ def scatter(codition_img,source=None, label_size=(128,128)):
     return input_label.scatter_(1, codition_img.long(),source)
 
 
-classBin = torch.tensor([0,1,2,3,1,1,4,5,5,1,6,7,1,8,9,10,11])
-semanticGroups = [[0], [1, 4, 5, 9, 12], [2], [3], [6], [7, 8], [10], [11], [13], [14], [15], [16]]
+classBin = torch.tensor([0,1])
+semanticGroups = [[0], [1]]
 def scatter_to_mask(segementation, labels):
     masks = []
     for i in range(segementation.shape[0]):
