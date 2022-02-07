@@ -132,8 +132,9 @@ def gaussion(x, sigma=1, mu=0):
 
 # ['background'0,'skin'1, 'eye_brow'2, 'eye'3,'r_nose'4, 'l_nose'5, 'mouth'6, 'u_lip'7,
 # 'l_lip'8, 'ear'9, 'ear_r'10, 'eye_g'11, 'neck'12, 'neck_l'13, 'cloth'14, 'hair'15, 'hat'16]
-IDList = [[0],[1]]
-groupName = ['Background', 'Hair']
+
+IDList = [np.arange(2).tolist(),[0],[1]]
+groupName = ['Global','Background','Hair']
 
 
 def scatter_to_mask(segementation, out_num=1, add_whole=True, add_flip=False, region=None):
