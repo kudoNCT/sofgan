@@ -239,6 +239,7 @@ if __name__ == '__main__':
     parser.add_argument('--lamb_condiction', type=float, default=2)
     parser.add_argument('--condition_path', type=str, default=None)
     parser.add_argument('--apex', action='store_true')
+    parser.add_argument('--wandb_name', type=str, default=None)
 
     args = parser.parse_args()
 
@@ -336,5 +337,5 @@ if __name__ == '__main__':
         drop_last=True,
         num_workers = args.num_workers,
     )
-    wandb.init(project="train_sofgan_ffhq256x256 kaggle",sync_tensorboard=True)
+    wandb.init(project=args.wandb_name,sync_tensorboard=True)
     train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, device)
