@@ -58,10 +58,10 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
     if get_rank() == 0:
         os.makedirs(f'sample', exist_ok=True)
         os.makedirs(f'sample/{args.name}', exist_ok=True)
-        os.makedirs(f'ckpts/{args.name}', exist_ok=True)
+        os.makedirs(f'{args.root_save}/ckpts/{args.name}', exist_ok=True)
         if args.with_tensorboard:
-            os.makedirs(f'tensorboard/{args.name}', exist_ok=True)
-            writer = SummaryWriter(f'tensorboard/{args.name}')
+            os.makedirs(f'{args.root_save}/tensorboard/{args.name}', exist_ok=True)
+            writer = SummaryWriter(f'{args.root_save}/tensorboard/{args.name}')
 
     for idx in pbar:
         i = idx + start_iter
@@ -207,7 +207,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                         # 'g_optim': g_optim.state_dict(),
                         # 'd_optim': d_optim.state_dict(),
                     },
-                    f'ckpts/{args.name}/{str(steps).zfill(6)}.pt',
+                    f'{args.root_save}/ckpts/{args.name}/{str(steps).zfill(6)}.pt',
                 )
 
 
@@ -241,6 +241,7 @@ if __name__ == '__main__':
     parser.add_argument('--condition_path', type=str, default=None)
     parser.add_argument('--apex', action='store_true')
     parser.add_argument('--wandb_name', type=str, default=None)
+    parser.add_argument('--root_save',type=str,default='.')
 
     args = parser.parse_args()
 
