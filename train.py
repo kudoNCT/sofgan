@@ -336,5 +336,5 @@ if __name__ == '__main__':
         drop_last=True,
         num_workers = args.num_workers,
     )
-    wandb.init(projector="train_sofgan_ffhq256x256 kaggle",sync_tensorboard=True)
+    wandb.init(project="train_sofgan_ffhq256x256 kaggle",sync_tensorboard=True)
     train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, device)
