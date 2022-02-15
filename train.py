@@ -198,7 +198,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
             steps = get_world_size() * args.batch * (1 + i)
 
 
-            if (steps+get_world_size()*args.batch) % 10000 < get_world_size()*args.batch  and steps != args.start_iter:
+            if (steps+get_world_size()*args.batch) % args.step_save < get_world_size()*args.batch  and steps != args.start_iter:
                 torch.save(
                     {
                         'g': g_module.state_dict(),
@@ -219,6 +219,7 @@ if __name__ == '__main__':
     parser.add_argument('path', type=str)
     parser.add_argument('--name', type=str, default='pose_condition')
     parser.add_argument('--iter', type=int, default=800000)
+    parser.add_argument('--step_save', type=int, default=10000)
     parser.add_argument('--batch', type=int, default=2)
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--n_sample', type=int, default=25)
